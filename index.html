@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>めとあたまの たいそう</title>
+<meta name="description" content="目と頭を毎日たのしく使う 習慣づくりアプリ">
+<meta name="theme-color" content="#1f7a8c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="めとあたま">
+<style>
+  /* ============================================================
+     共通スタイル（大きい文字・大きいボタン・やさしい色づかい）
+     ============================================================ */
+  :root{
+    --main: #1f7a8c;          /* 強調の色（おちついた青みどり） */
+    --main-dark: #135765;
+    --bg: #f4f1e9;            /* 背景（やさしいクリーム色） */
+    --card: #ffffff;
+    --text: #2b2b2b;
+    --muted: #5a5a55;
+    --maru: #e8973a;          /* 花丸の色 */
+    --base-font: 20px;        /* 設定で「大きい」にすると変わる */
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    font-size: var(--base-font);
+    line-height: 1.7;
+    -webkit-text-size-adjust: 100%;
+  }
+  body.big{ --base-font: 26px; }
+
+  .app{
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 18px 18px 40px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 画面の切り替え：表示中の画面だけ見せる */
+  .screen{ display: none; flex: 1; flex-direction: column; }
+  .screen.active{ display: flex; }
+
+  h1{ font-size: 1.5em; margin: 8px 0; font-weight: 700; }
+  h2{ font-size: 1.3em; margin: 6px 0 14px; font-weight: 700; }
+  p{ margin: 10px 0; }
+
+  /* ボタン全般：大きく押しやすく */
+  button{
+    font-family: inherit;
+    font-size: 1em;
+    cursor: pointer;
+    border: none;
+    border-radius: 16px;
+    padding: 18px;
+    min-height: 64px;
+    width: 100%;
+    background: #e6e2d7;
+    color: var(--text);
+    margin: 8px 0;
+    line-height: 1.4;
+  }
+  button:active{ transform: scale(0.98); }
+  button:focus-visible{ outline: 3px solid var(--main); outline-offset: 3px; }
+  input:focus-visible{ outline: 3px solid var(--main); outline-offset: 2px; }
+  .btn-nav:disabled{ opacity: 0.35; cursor: default; }
+
+  .btn-main{
+    background: var(--main);
+    color: #fff;
+    font-size: 1.4em;
+    font-weight: 700;
+    min-height: 92px;
+    box-shadow: 0 4px 0 var(--main-dark);
+  }
+  .btn-main:active{ box-shadow: 0 1px 0 var(--main-dark); transform: translateY(3px); }
+
+  .btn-back{
+    background: #e9f3f5;
+    color: var(--main-dark);
+    font-weight: 700;
+    text-align: left;
+    min-height: 56px;
+    padding: 14px 22px;
+    width: auto;
+    min-width: 130px;
+    align-self: flex-start;
+  }
+
+  /* ホームのメニュー（4個） */
+  .menu-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 6px;
+  }
+  .menu-grid button{
+    background: var(--card);
+    border: 2px solid #e0dccf;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-height: 120px;
+    font-weight: 700;
+  }
+  .menu-grid .ico{ font-size: 2em; }
+
+  .pill{
+    background: #e9f3f5;
+    color: var(--main-dark);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+    font-weight: 700;
+    margin: 14px 0;
+  }
+
+  .center{ text-align: center; }
+  .grow{ flex: 1; }
+  .hint{ color: var(--muted); font-size: 0.9em; }
+  .big-emoji{ font-size: 3.4em; line-height: 1; }
+
+  /* いま何番目か（きょうのトレーニング中だけ出す） */
+  .prog{
+    background: #fff3e3;
+    color: #8a5a1a;
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 700;
+    margin: 4px 0 10px;
+  }
+  /* はじめての人への ひとこと案内 */
+  .firsttime{
+    background: #fff8ec;
+    border: 2px dashed #e8c489;
+    color: #8a5a1a;
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+    font-weight: 700;
+    margin: 6px 0 2px;
+  }
+  /* メニューの見出し・くぎり */
+  .menu-label{ font-weight: 700; margin: 22px 0 2px; }
+  .menu-label .sub{ color: var(--muted); font-weight: 400; font-size: 0.8em; }
+  /* せってい は ひかえめに */
+  .btn-quiet{ font-size: 0.9em; font-weight: 400; color: var(--text); background: #eceadf; }
+  /* せいかい／ちがう の しるし（色だけに たよらない） */
+  .mark-ok{ background:#cdeccd !important; border-color:#5aa05a !important; }
+  .mark-ng{ background:#f3d2d2 !important; border-color:#c06a6a !important; }
+
+  /* ---- 目の体操：動く丸 ---- */
+  #eyeArea{
+    position: relative;
+    background: var(--card);
+    border: 2px solid #e0dccf;
+    border-radius: 16px;
+    width: 100%;
+    height: 60vh;
+    max-height: 460px;
+    overflow: hidden;
+    margin: 10px 0;
+  }
+  #eyeDot{
+    position: absolute;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--main);
+    left: 50%; top: 50%;
+    transform: translate(-50%,-50%);
+    transition: left 1.1s ease-in-out, top 1.1s ease-in-out;
+  }
+
+  /* ---- 遠近ピント ---- */
+  #focusArea{
+    background: var(--card);
+    border: 2px solid #e0dccf;
+    border-radius: 16px;
+    height: 56vh;
+    max-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+  }
+  #focusTarget{ font-weight: 700; color: var(--main-dark); }
+
+  /* ---- 記憶ゲーム ---- */
+  .card-row{
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 18px 0;
+  }
+  .mcard{
+    width: 84px; height: 84px;
+    background: var(--card);
+    border: 2px solid #e0dccf;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4em;
+  }
+  .choices button{ font-size: 2.2em; min-height: 88px; }
+  .choices{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* ---- けいさん ---- */
+  #calcQ{
+    font-size: 3em;
+    font-weight: 700;
+    color: var(--main-dark);
+    background: var(--card);
+    border: 2px solid #e0dccf;
+    border-radius: 16px;
+    padding: 26px 10px;
+    margin: 14px 0;
+  }
+
+  /* ---- カレンダー ---- */
+  .cal-nav{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px; }
+  .btn-nav{ width:auto; min-width:92px; min-height:52px; margin:0; padding:10px 14px; background:#e9f3f5; color:var(--main-dark); font-weight:700; }
+  .cal{ display:grid; grid-template-columns: repeat(7,1fr); gap:6px; margin-top:10px; }
+  .cal .head{ text-align:center; color:var(--muted); font-size:0.95em; padding:4px 0; }
+  .cal .day{
+    aspect-ratio: 1/1;
+    display:flex; align-items:center; justify-content:center;
+    border-radius: 10px;
+    font-size: 0.85em;
+    position: relative;
+    background: var(--card);
+    border: 1px solid #e8e4d8;
+  }
+  .cal .day.empty{ background: transparent; border: none; }
+  .cal .day.done{ background: #fff3e3; }
+  .cal .day.done::after{ content:"◎"; position:absolute; color:var(--maru); font-size:1.4em; }
+  .cal .day.done span{ position: relative; z-index:1; color: var(--maru); font-weight:700; }
+
+  /* 設定 */
+  .setting-row{ background:var(--card); border:2px solid #e0dccf; border-radius:14px; padding:14px; margin:10px 0; }
+  input[type=text]{
+    font-family: inherit; font-size: 1em; padding: 12px;
+    width: 100%; border:2px solid #cfcabb; border-radius:12px; margin-top:8px;
+  }
+  .toggle{ display:flex; gap:10px; }
+  .toggle button{ margin:0; }
+  .toggle button.on{ background: var(--main); color:#fff; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ ホーム ============ -->
+  <section id="home" class="screen active">
+    <p class="center hint" id="todayLabel">　</p>
+    <h1 class="center" id="greeting">こんにちは</h1>
+    <div class="pill" id="streakPill">きょうから はじめましょう</div>
+
+    <button class="btn-main" onclick="startToday()">▶ きょうの<br>トレーニング</button>
+    <p class="center hint">3ぷんで おわります</p>
+    <p class="firsttime" id="firstHint" style="display:none">まずは うえの ▶ボタンを おしてみましょう</p>
+
+    <p class="menu-label">ひとつずつ ためす<span class="sub">　すきな ものだけでも OK</span></p>
+    <div class="menu-grid">
+      <button onclick="openEye()"><span class="ico" aria-hidden="true">👁️</span>めの たいそう</button>
+      <button onclick="openFocus()"><span class="ico" aria-hidden="true">🔭</span>ピント れんしゅう</button>
+      <button onclick="openMemory()"><span class="ico" aria-hidden="true">🧠</span>きおく ゲーム</button>
+      <button onclick="openCalc()"><span class="ico" aria-hidden="true">🔢</span>けいさん</button>
+    </div>
+    <button onclick="openRecord()" style="margin-top:14px"><span class="ico" aria-hidden="true" style="font-size:1.3em">📅</span> きろくを みる</button>
+    <div class="grow"></div>
+    <button class="btn-quiet" onclick="openSettings()"><span aria-hidden="true">⚙️</span> せってい</button>
+  </section>
+
+  <!-- ============ 目の体操 ============ -->
+  <section id="eye" class="screen">
+    <button class="btn-back" onclick="goHome()">← もどる</button>
+    <p class="prog" id="eyeProg" style="display:none"></p>
+    <h2 class="center">めの たいそう</h2>
+    <p class="center" id="eyeMsg" aria-live="polite">あおい まるを めで おいかけましょう</p>
+    <div id="eyeArea"><div id="eyeDot"></div></div>
+    <button class="btn-main" id="eyeBtn" onclick="toggleEye()">はじめる</button>
+  </section>
+
+  <!-- ============ 遠近ピント ============ -->
+  <section id="focus" class="screen">
+    <button class="btn-back" onclick="goHome()">← もどる</button>
+    <p class="prog" id="focusProg" style="display:none"></p>
+    <h2 class="center">ピント れんしゅう</h2>
+    <p class="center" id="focusMsg" aria-live="polite">ちかくと とおくを かわるがわる みましょう</p>
+    <div id="focusArea"><div id="focusTarget">★</div></div>
+    <button class="btn-main" id="focusBtn" onclick="toggleFocus()">はじめる</button>
+  </section>
+
+  <!-- ============ 記憶ゲーム ============ -->
+  <section id="memory" class="screen">
+    <button class="btn-back" onclick="goHome()">← もどる</button>
+    <p class="prog" id="memProg" style="display:none"></p>
+    <h2 class="center">きおく ゲーム</h2>
+    <p class="center" id="memMsg" aria-live="polite">よく みて おぼえてね</p>
+    <div class="card-row" id="memCards"></div>
+    <div id="memQuestion" class="center" style="display:none">
+      <p>さっき あったのは どれ？</p>
+      <div class="choices" id="memChoices"></div>
+    </div>
+    <div class="grow"></div>
+  </section>
+
+  <!-- ============ けいさん ============ -->
+  <section id="calc" class="screen">
+    <button class="btn-back" onclick="goHome()">← もどる</button>
+    <h2 class="center">けいさん</h2>
+    <p class="center" id="calcMsg" aria-live="polite">こたえを えらんでね</p>
+    <div id="calcQ" class="center" aria-live="polite"></div>
+    <div class="choices" id="calcChoices"></div>
+    <div class="grow"></div>
+  </section>
+
+  <!-- ============ きょうのトレーニング 完了 ============ -->
+  <section id="done" class="screen">
+    <div class="grow"></div>
+    <div class="center">
+      <div class="big-emoji">🌸</div>
+      <h1>おつかれさま！</h1>
+      <p id="doneMsg">よく がんばりました</p>
+      <div class="pill" id="doneStreak"></div>
+    </div>
+    <div class="grow"></div>
+    <button class="btn-main" onclick="goHome()">ホームに もどる</button>
+  </section>
+
+  <!-- ============ 記録 ============ -->
+  <section id="record" class="screen">
+    <button class="btn-back" onclick="goHome()">← もどる</button>
+    <h2 class="center">きろく</h2>
+    <div class="pill" id="recordStreak"></div>
+    <div class="cal-nav">
+      <button class="btn-nav" id="calPrev" onclick="changeMonth(-1)" aria-label="まえの つき">◀ まえ</button>
+      <p class="center" id="calTitle" style="margin:0;font-weight:700"></p>
+      <button class="btn-nav" id="calNext" onclick="changeMonth(1)" aria-label="つぎの つき">つぎ ▶</button>
+    </div>
+    <button class="btn-quiet" id="calToday" onclick="thisMonth()" style="display:none">きょうの つきに もどる</button>
+    <div class="cal" id="calendar"></div>
+  </section>
+
+  <!-- ============ 設定 ============ -->
+  <section id="settings" class="screen">
+    <button class="btn-back" onclick="goHome()">← もどる</button>
+    <h2 class="center">せってい</h2>
+
+    <div class="setting-row">
+      <label for="nameInput">おなまえ</label>
+      <input type="text" id="nameInput" placeholder="れい：はなこ" oninput="saveName(this.value)">
+      <p id="nameSaved" aria-live="polite" style="display:none;color:#0f6e56;font-weight:700;margin:8px 0 0">✓ ほぞんしました</p>
+    </div>
+
+    <div class="setting-row">
+      <p style="margin:0 0 6px">もじの おおきさ</p>
+      <div class="toggle">
+        <button id="fontNormal" onclick="setBig(false)">ふつう</button>
+        <button id="fontBig" onclick="setBig(true)">おおきい</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <p style="margin:0 0 6px">おと</p>
+      <div class="toggle">
+        <button id="soundOn" onclick="setSound(true)">あり</button>
+        <button id="soundOff" onclick="setSound(false)">なし</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <p style="margin:0 0 6px">むずかしさ</p>
+      <div class="toggle">
+        <button id="lvEasy" onclick="setLevel('easy')">やさしい</button>
+        <button id="lvNormal" onclick="setLevel('normal')">ふつう</button>
+        <button id="lvHard" onclick="setLevel('hard')">むずかしい</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   データ保存（この端末に保存。ログイン不要）
+   ============================================================ */
+var KEY = "kinokaifuku_v1";
+var data = loadData();
+
+function loadData(){
+  try{
+    var d = JSON.parse(localStorage.getItem(KEY));
+    if(!d) throw 0;
+    if(!Array.isArray(d.days)) d.days = [];
+    if(typeof d.name !== "string") d.name = "";
+    if(typeof d.big !== "boolean") d.big = false;
+    if(typeof d.sound !== "boolean") d.sound = true;
+    if(["easy","normal","hard"].indexOf(d.level) === -1) d.level = "normal";
+    return d;
+  }catch(e){
+    return { name:"", big:false, sound:true, level:"normal", days:[] };
+  }
+}
+/* むずかしさ ごとの 設定（目の速さ・記憶のまい数や時間・けいさんの大きさ） */
+function levelCfg(){
+  if(data.level === "easy")  return { eyeInterval:1500, memCards:2, memShow:6000, calcMax:5,  calcSub:false };
+  if(data.level === "hard")  return { eyeInterval:900,  memCards:4, memShow:4000, calcMax:9,  calcSub:true  };
+  return                            { eyeInterval:1200, memCards:3, memShow:5000, calcMax:9,  calcSub:false };
+}
+function saveData(){ localStorage.setItem(KEY, JSON.stringify(data)); }
+
+/* 日付を "YYYY-MM-DD" の文字列にする */
+function dateStr(d){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function today(){ return dateStr(new Date()); }
+
+/* 連続日数を数える（今日 or 昨日から、さかのぼって連続している数） */
+function streakCount(){
+  if(data.days.length===0) return 0;
+  var set = {}; data.days.forEach(function(x){ set[x]=true; });
+  var d = new Date();
+  if(!set[dateStr(d)]){ d.setDate(d.getDate()-1); if(!set[dateStr(d)]) return 0; }
+  var n=0;
+  while(set[dateStr(d)]){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+
+/* きょうを「やった」記録に加える */
+function markToday(){
+  var t = today();
+  if(data.days.indexOf(t)===-1){ data.days.push(t); saveData(); }
+}
+
+/* ============================================================
+   画面の切り替え
+   ============================================================ */
+function show(id){
+  var all = document.querySelectorAll(".screen");
+  for(var i=0;i<all.length;i++) all[i].classList.remove("active");
+  document.getElementById(id).classList.add("active");
+  if(id==="home") refreshHome();
+  window.scrollTo(0,0);
+}
+
+/* ホームへ「安全に」もどる：動いているもの全部を止め、連続モードも解除 */
+function goHome(){
+  stopEye(); stopFocus(); stopMemory(); stopCalc();
+  if(nameSavedTimer){ clearTimeout(nameSavedTimer); nameSavedTimer = null; }
+  inFlow = false;
+  memAnswered = false;
+  hideProgs();
+  show("home");
+}
+
+/* いま何番目かの表示（きょうのトレーニング中だけ出す） */
+function setProg(elId, n){
+  var el = document.getElementById(elId);
+  if(inFlow){
+    el.textContent = "きょうの トレーニング　" + n + " ばんめ ／ 3つ";
+    el.style.display = "block";
+  }else{
+    el.style.display = "none";
+  }
+}
+function hideProgs(){
+  ["eyeProg","focusProg","memProg"].forEach(function(id){
+    document.getElementById(id).style.display = "none";
+  });
+}
+/* きょうのトレーニング中は「もどる」を「やめる」に（押すと何が起きるか分かるように） */
+function setBackLabel(screenId){
+  var b = document.querySelector("#" + screenId + " .btn-back");
+  if(b) b.textContent = inFlow ? "← トレーニングを やめる" : "← もどる";
+}
+
+/* ============================================================
+   おと（ぴこっと鳴らす。設定でオフなら鳴らさない）
+   ============================================================ */
+var audioCtx = null;   // 音の箱は1個だけ作って使い回す
+function beep(freq){
+  if(!data.sound) return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    var play = function(){
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = freq||660; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.value = 0.15; o.start();
+      o.stop(audioCtx.currentTime + 0.15);
+    };
+    if(audioCtx.state === "suspended"){ audioCtx.resume().then(play).catch(function(){}); }
+    else { play(); }
+  }catch(e){}
+}
+
+/* ============================================================
+   ホームの表示を最新にする
+   ============================================================ */
+function refreshHome(){
+  var days = ["にち","げつ","か","すい","もく","きん","ど"];
+  var d = new Date();
+  document.getElementById("todayLabel").textContent =
+    (d.getMonth()+1)+"がつ "+d.getDate()+"にち（"+days[d.getDay()]+"）";
+  document.getElementById("greeting").textContent =
+    "こんにちは" + (data.name ? "、"+data.name+"さん" : "");
+  var s = streakCount();
+  document.getElementById("streakPill").textContent =
+    s>0 ? "🔥 "+s+"にち つづいています" : "きょうから はじめましょう";
+  // まだ一度もトレーニングをしていない人に、やさしい案内を出す
+  var isFirst = (data.days.length === 0);
+  document.getElementById("firstHint").style.display = isFirst ? "block" : "none";
+}
+
+/* ============================================================
+   きょうのトレーニング（目→ピント→記憶 を順番に）
+   ============================================================ */
+var inFlow = false;   // 連続実行モードか
+
+function startToday(){
+  inFlow = true;
+  openEye();
+}
+
+/* 1つ終わったら次へ進む（連続モードのとき） */
+function nextInFlow(fromScreen){
+  if(!inFlow) return false;
+  if(fromScreen==="eye"){ openFocus(); return true; }
+  if(fromScreen==="focus"){ openMemory(); return true; }
+  if(fromScreen==="memory"){ finishFlow(); return true; }
+  return false;
+}
+
+function finishFlow(){
+  inFlow = false;
+  markToday();
+  var s = streakCount();
+  document.getElementById("doneMsg").textContent =
+    (data.name? data.name+"さん、":"") + "よく がんばりました";
+  document.getElementById("doneStreak").textContent =
+    s>=2 ? "🌸 "+s+"にち つづきました！" : "🌸 きょうの ぶん かんりょう！";
+  beep(880);
+  show("done");
+}
+
+/* ============================================================
+   ① 目の体操（丸が動く）
+   ============================================================ */
+var eyeTimer=null, eyeStep=0, eyeRunning=false;
+var eyePositions = [
+  [50,12],[50,88],[12,50],[88,50],   // 上下左右
+  [15,15],[85,15],[85,85],[15,85],   // 四すみ
+  [50,50],[20,50],[80,50],[50,20],[50,80],[50,50] // ぐるっと
+];
+var EYE_TOTAL = 30; // 何回うごいたら終わるか（約30回 ≒ 30秒強）
+
+function openEye(){
+  show("eye");
+  resetEye();
+  setProg("eyeProg", 1);
+  setBackLabel("eye");
+  if(inFlow) runEye();   // きょうのトレーニング中は自動ではじめる
+}
+function resetEye(){
+  stopEye();
+  document.getElementById("eyeBtn").textContent = "はじめる";
+  document.getElementById("eyeMsg").textContent = "あおい まるを めで おいかけましょう（30びょう ほど）";
+  setDot(50,50);
+}
+function setDot(x,y){
+  var dot = document.getElementById("eyeDot");
+  dot.style.left = x+"%"; dot.style.top = y+"%";
+}
+function toggleEye(){
+  if(eyeRunning){ resetEye(); }
+  else{ runEye(); }
+}
+function runEye(){
+  eyeRunning = true; eyeStep = 0;
+  document.getElementById("eyeBtn").textContent = "やめる";
+  document.getElementById("eyeMsg").textContent = "まるを おいかけて…";
+  eyeTimer = setInterval(function(){
+    var p = eyePositions[eyeStep % eyePositions.length];
+    setDot(p[0],p[1]);
+    eyeStep++;
+    if(eyeStep>=EYE_TOTAL){ endEye(); }
+  }, levelCfg().eyeInterval);
+  // すぐ1回め
+  var p0 = eyePositions[0]; setDot(p0[0],p0[1]); eyeStep=1;
+}
+function stopEye(){
+  if(eyeTimer){ clearInterval(eyeTimer); eyeTimer=null; }
+  eyeRunning=false;
+}
+function endEye(){
+  if(!eyeRunning) return;   // 二重に呼ばれても1回だけ
+  stopEye();
+  beep(660);
+  document.getElementById("eyeMsg").textContent = "🌸 よく できました！";
+  document.getElementById("eyeBtn").textContent = "もういちど";
+  if(nextInFlow("eye")) return;
+}
+
+/* ============================================================
+   ② 遠近ピント（ちかく⇄とおく）
+   ============================================================ */
+var focusTimer=null, focusRunning=false, focusStep=0;
+var FOCUS_TOTAL = 8;        // 切り替え回数（8回 × 5秒 ＝ 約40秒）
+var FOCUS_INTERVAL = 5000;  // 1回あたり5秒（ピントを合わせる時間をとる）
+
+function openFocus(){
+  show("focus");
+  resetFocus();
+  setProg("focusProg", 2);
+  setBackLabel("focus");
+  if(inFlow) runFocus();   // きょうのトレーニング中は自動ではじめる
+}
+function resetFocus(){
+  stopFocus();
+  document.getElementById("focusBtn").textContent = "はじめる";
+  document.getElementById("focusMsg").textContent = "ちかくと とおくを かわるがわる みましょう（ゆっくりで OK）";
+  var t = document.getElementById("focusTarget");
+  t.textContent = "★"; t.style.fontSize = "4em";
+}
+function toggleFocus(){
+  if(focusRunning){ resetFocus(); }
+  else{ runFocus(); }
+}
+function runFocus(){
+  focusRunning = true; focusStep = 0;
+  document.getElementById("focusBtn").textContent = "やめる";
+  focusTick();
+  focusTimer = setInterval(focusTick, FOCUS_INTERVAL);
+}
+function focusTick(){
+  var t = document.getElementById("focusTarget");
+  var msg = document.getElementById("focusMsg");
+  if(focusStep % 2 === 0){
+    t.style.fontSize = "7em"; t.textContent="★";
+    msg.textContent = "👆 ちかくを みる（ゆびや てもとを）";
+  }else{
+    t.style.fontSize = "1.6em"; t.textContent="★";
+    msg.textContent = "🪟 とおくを みる（まどの そと や かべ）";
+  }
+  beep(focusStep%2===0?550:760);
+  focusStep++;
+  if(focusStep>=FOCUS_TOTAL){ endFocus(); }
+}
+function stopFocus(){
+  if(focusTimer){ clearInterval(focusTimer); focusTimer=null; }
+  focusRunning=false;
+}
+function endFocus(){
+  if(!focusRunning) return;   // 二重に呼ばれても1回だけ
+  stopFocus();
+  beep(660);
+  document.getElementById("focusMsg").textContent = "🌸 よく できました！";
+  document.getElementById("focusBtn").textContent = "もういちど";
+  var t=document.getElementById("focusTarget"); t.style.fontSize="4em";
+  if(nextInFlow("focus")) return;
+}
+
+/* ============================================================
+   ③ 記憶ゲーム
+   ============================================================ */
+var MEM_ITEMS = ["🍎","🐶","🚗","🌸","⭐","🐟","🍓","🌻","🐱","🎈","🍇","🦋"];
+var memAnswer = "";
+var memTimer = null;       // 記憶ゲームの待ち時間タイマー
+var memAnswered = false;   // もう答えたか（二度押し防止）
+
+function stopMemory(){
+  if(memTimer){ clearTimeout(memTimer); memTimer = null; }
+}
+function openMemory(){
+  show("memory");
+  setProg("memProg", 3);
+  setBackLabel("memory");
+  startMemory();
+}
+function startMemory(){
+  stopMemory();              // 前のタイマーが残っていたら消す
+  memAnswered = false;
+  var cfg = levelCfg();
+  document.getElementById("memQuestion").style.display = "none";
+  document.getElementById("memMsg").textContent = "よく みて おぼえてね（" + (cfg.memShow/1000) + "びょう）";
+
+  // むずかしさに あわせて まい数を えらぶ
+  var pool = MEM_ITEMS.slice();
+  shuffle(pool);
+  var shown = pool.slice(0, cfg.memCards);
+  memAnswer = shown[Math.floor(Math.random()*shown.length)];
+
+  var row = document.getElementById("memCards");
+  row.innerHTML = "";
+  shown.forEach(function(it){
+    var d = document.createElement("div");
+    d.className = "mcard"; d.textContent = it;
+    row.appendChild(d);
+  });
+
+  // 決めた時間だけ みせてから かくす
+  memTimer = setTimeout(function(){
+    var cards = row.querySelectorAll(".mcard");
+    cards.forEach(function(c){ c.textContent = "❓"; });
+    askMemory(shown);
+  }, cfg.memShow);
+}
+function askMemory(shown){
+  document.getElementById("memMsg").textContent = "さっき あったのは どれ？";
+  document.getElementById("memQuestion").style.display = "block";
+
+  // 正解1つ＋まちがい3つ
+  var wrong = MEM_ITEMS.filter(function(x){ return shown.indexOf(x)===-1; });
+  shuffle(wrong);
+  var opts = [memAnswer, wrong[0], wrong[1], wrong[2]];
+  shuffle(opts);
+
+  var box = document.getElementById("memChoices");
+  box.innerHTML = "";
+  box.style.gridTemplateColumns = "";   // 選択肢は2列（クラスの初期値）にもどす
+  opts.forEach(function(o){
+    var b = document.createElement("button");
+    b.textContent = o;
+    b.onclick = function(){ answerMemory(o, b); };
+    box.appendChild(b);
+  });
+}
+function answerMemory(choice, btn){
+  if(memAnswered) return;     // すでに答えていたら何もしない（二度押し防止）
+  memAnswered = true;
+  var ok = (choice === memAnswer);
+  var box = document.getElementById("memChoices");
+  // すべて押せなくし、正解のボタンには ⭕ をつける（色だけに たよらない）
+  box.querySelectorAll("button").forEach(function(b){
+    b.disabled = true;
+    if(b.textContent === memAnswer){ b.classList.add("mark-ok"); b.textContent = memAnswer+" ⭕"; }
+  });
+  if(ok){
+    beep(880);
+    document.getElementById("memMsg").textContent = "⭕ せいかい！";
+  }else{
+    btn.classList.add("mark-ng"); btn.textContent = choice+" ✗"; beep(300);
+    document.getElementById("memMsg").textContent = "✗ おしい！ こたえは "+memAnswer;
+  }
+  memTimer = setTimeout(function(){
+    if(nextInFlow("memory")) return;
+    // 単体プレイのときは 「もう いちど」と「ホームに もどる」を出す
+    var box2 = document.getElementById("memChoices");
+    box2.innerHTML = "";
+    box2.style.gridTemplateColumns = "1fr";   // 終了後のボタンは縦1列に
+    var again = document.createElement("button");
+    again.className="btn-main"; again.textContent="もう いちど";
+    again.onclick = startMemory;
+    box2.appendChild(again);
+    var home = document.createElement("button");
+    home.className="btn-back"; home.textContent="← ホームに もどる";
+    home.onclick = goHome;
+    box2.appendChild(home);
+  }, 2500);
+}
+
+function shuffle(a){
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=a[i]; a[i]=a[j]; a[j]=t;
+  }
+}
+
+/* ============================================================
+   ④ けいさん（注意・計算）
+   ============================================================ */
+var calcAnswer = 0, calcTimer = null, calcAnswered = false;
+
+function stopCalc(){ if(calcTimer){ clearTimeout(calcTimer); calcTimer = null; } }
+function openCalc(){
+  show("calc");
+  startCalc();
+}
+function startCalc(){
+  stopCalc();
+  calcAnswered = false;
+  var cfg = levelCfg();
+  var a = 1 + Math.floor(Math.random()*cfg.calcMax);
+  var b = 1 + Math.floor(Math.random()*cfg.calcMax);
+  var op = "＋";
+  if(cfg.calcSub && Math.random() < 0.5){
+    if(a < b){ var t=a; a=b; b=t; }   // ひき算は こたえが マイナスに ならないように
+    op = "−"; calcAnswer = a - b;
+  }else{
+    calcAnswer = a + b;
+  }
+  document.getElementById("calcMsg").textContent = "こたえは どれ？";
+  document.getElementById("calcQ").textContent = a + " " + op + " " + b + " ＝ ?";
+
+  // 正解＋ まちがい3つ（近い数字をつくる）
+  var opts = [calcAnswer];
+  var guard = 0;
+  while(opts.length < 4 && guard < 60){
+    guard++;
+    var delta = (Math.floor(Math.random()*5) + 1) * (Math.random() < 0.5 ? -1 : 1);
+    var w = calcAnswer + delta;
+    if(w >= 0 && opts.indexOf(w) === -1) opts.push(w);
+  }
+  shuffle(opts);
+
+  var box = document.getElementById("calcChoices");
+  box.innerHTML = "";
+  box.style.gridTemplateColumns = "";   // 2列にもどす
+  opts.forEach(function(o){
+    var btn = document.createElement("button");
+    btn.textContent = o;
+    btn.onclick = function(){ answerCalc(o, btn); };
+    box.appendChild(btn);
+  });
+}
+function answerCalc(choice, btn){
+  if(calcAnswered) return;       // 二度押し防止
+  calcAnswered = true;
+  var box = document.getElementById("calcChoices");
+  box.querySelectorAll("button").forEach(function(b){
+    b.disabled = true;
+    if(b.textContent === String(calcAnswer)){ b.classList.add("mark-ok"); b.textContent = calcAnswer + " ⭕"; }
+  });
+  if(choice === calcAnswer){
+    beep(880);
+    document.getElementById("calcMsg").textContent = "⭕ せいかい！";
+  }else{
+    btn.classList.add("mark-ng"); btn.textContent = choice + " ✗"; beep(300);
+    document.getElementById("calcMsg").textContent = "✗ おしい！ こたえは " + calcAnswer;
+  }
+  calcTimer = setTimeout(function(){
+    var box2 = document.getElementById("calcChoices");
+    box2.innerHTML = "";
+    box2.style.gridTemplateColumns = "1fr";
+    var again = document.createElement("button");
+    again.className="btn-main"; again.textContent="もう いちど";
+    again.onclick = startCalc;
+    box2.appendChild(again);
+    var home = document.createElement("button");
+    home.className="btn-back"; home.textContent="← ホームに もどる";
+    home.onclick = goHome;
+    box2.appendChild(home);
+  }, 2500);
+}
+
+/* ============================================================
+   記録（カレンダー）
+   ============================================================ */
+var calOffset = 0;   // 表示中の月（0=今月、-1=先月 …）
+
+function openRecord(){
+  show("record");
+  calOffset = 0;     // 開くときは今月にもどす
+  var s = streakCount();
+  document.getElementById("recordStreak").textContent =
+    s>0 ? "🔥 いま "+s+"にち つづいています" : "まだ きろくが ありません";
+  buildCalendar();
+}
+/* どこまで過去にもどれるか（記録のある一番古い月まで） */
+function minCalOffset(){
+  if(data.days.length === 0) return 0;
+  var oldest = data.days.slice().sort()[0];   // 文字列なので並べ替えで最古が先頭
+  var p = oldest.split("-");
+  var now = new Date();
+  return (parseInt(p[0],10) - now.getFullYear())*12 + (parseInt(p[1],10)-1 - now.getMonth());
+}
+function changeMonth(delta){
+  calOffset += delta;
+  if(calOffset > 0) calOffset = 0;            // 未来の月へは行かせない
+  var minO = minCalOffset();
+  if(calOffset < minO) calOffset = minO;      // 記録より前へも行かせない
+  buildCalendar();
+}
+function thisMonth(){ calOffset = 0; buildCalendar(); }
+function buildCalendar(){
+  var base = new Date();
+  base.setDate(1);                       // 月の計算がずれないよう1日に固定
+  base.setMonth(base.getMonth() + calOffset);
+  var y = base.getFullYear(), m = base.getMonth();
+  document.getElementById("calTitle").textContent = y + "ねん " + (m+1) + "がつ";
+  var set = {}; data.days.forEach(function(x){ set[x]=true; });
+
+  var cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+  var heads = ["日","月","火","水","木","金","土"];
+  heads.forEach(function(h){
+    var e=document.createElement("div"); e.className="head"; e.textContent=h; cal.appendChild(e);
+  });
+  var first = new Date(y,m,1).getDay();
+  var last = new Date(y,m+1,0).getDate();
+  for(var i=0;i<first;i++){
+    var e=document.createElement("div"); e.className="day empty"; cal.appendChild(e);
+  }
+  for(var d=1; d<=last; d++){
+    var ds = y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    var cell = document.createElement("div");
+    cell.className = "day" + (set[ds]?" done":"");
+    var sp = document.createElement("span"); sp.textContent = d;
+    cell.appendChild(sp);
+    cal.appendChild(cell);
+  }
+
+  // 月送りボタンの 有効/無効 と「今月にもどる」の出し分け
+  document.getElementById("calToday").style.display = (calOffset !== 0) ? "block" : "none";
+  document.getElementById("calNext").disabled = (calOffset >= 0);
+  document.getElementById("calPrev").disabled = (calOffset <= minCalOffset());
+}
+
+/* ============================================================
+   設定
+   ============================================================ */
+function openSettings(){
+  show("settings");
+  document.getElementById("nameInput").value = data.name || "";
+  updateSettingButtons();
+}
+var nameSavedTimer = null;
+function saveName(v){
+  // 半角・全角スペースだけの名前は「なし」として扱う
+  data.name = v.replace(/　/g, " ").trim();
+  saveData();
+  // 「✓ ほぞんしました」を少しのあいだ出す（保存ボタンが無くても安心）
+  var el = document.getElementById("nameSaved");
+  el.style.display = "block";
+  if(nameSavedTimer) clearTimeout(nameSavedTimer);
+  nameSavedTimer = setTimeout(function(){ el.style.display = "none"; }, 1500);
+}
+function setBig(b){ data.big=b; applyBig(); saveData(); updateSettingButtons(); }
+function setSound(b){ data.sound=b; saveData(); updateSettingButtons(); if(b) beep(660); }
+function setLevel(lv){ data.level=lv; saveData(); updateSettingButtons(); }
+function applyBig(){ document.body.classList.toggle("big", !!data.big); }
+function updateSettingButtons(){
+  document.getElementById("fontNormal").classList.toggle("on", !data.big);
+  document.getElementById("fontBig").classList.toggle("on", !!data.big);
+  document.getElementById("soundOn").classList.toggle("on", !!data.sound);
+  document.getElementById("soundOff").classList.toggle("on", !data.sound);
+  document.getElementById("lvEasy").classList.toggle("on", data.level==="easy");
+  document.getElementById("lvNormal").classList.toggle("on", data.level==="normal");
+  document.getElementById("lvHard").classList.toggle("on", data.level==="hard");
+}
+
+/* ============================================================
+   起動時
+   ============================================================ */
+applyBig();
+refreshHome();
+
+/* PWA：オフライン用ファイル（サービスワーカー）を登録。
+   ※ファイルを直接ひらく(file://)ときは動かず、公開した後や簡易サーバーで有効になります。 */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
