@@ -3,7 +3,7 @@
   "short_name": "めとあたま",
   "description": "目と頭を毎日たのしく使う 習慣づくりアプリ",
   "lang": "ja",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

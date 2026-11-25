@@ -1,8 +1,10 @@
 /* サービスワーカー：アプリのファイルを端末に保存し、ネットが無くても開けるようにする */
-var CACHE = "kinokaifuku-v1";
+/* 2026-11-25：13.pineapp.jp（Cloudflare Pages）に移したので v2 にした。
+   Cloudflare Pages は「/index.html」を「/」へ移す（転送する）ので、転送される住所は保存しない
+   （保存した転送をアプリを開くときに返すと、ブラウザがエラーにする）。 */
+var CACHE = "kinokaifuku-v2";
 var ASSETS = [
   "./",
-  "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -36,7 +38,7 @@ self.addEventListener("fetch", function(e){
         var copy = res.clone();
         caches.open(CACHE).then(function(c){ try{ c.put(e.request, copy); }catch(_){} });
         return res;
-      }).catch(function(){ return caches.match("./index.html"); });
+      }).catch(function(){ return caches.match("./"); });
     })
   );
 });

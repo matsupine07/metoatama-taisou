@@ -44,6 +44,15 @@
 - ローカルで確認する場合は `python -m http.server 8765` で簡易サーバーを立てられる
   （`.claude/launch.json` に設定済み）。
 
+## 公開（2026-11-25 から 13.pineapp.jp）
+
+- ⭐**本物の住所は https://13.pineapp.jp/**（Cloudflare Pages の `pineapp13`。pineさん「発信している物はすべてjpでナンバリングする」）。前の GitHub Pages（`matsupine07.github.io/metoatama-taisou/`）は、新しい住所へ移すだけのページにした（枝 `gh-pages`。`main` はアプリの正本のまま）
+- このPCの置き場所は `Desktop\claude\2_アプリ\8_めとあたまのたいそう`（2026-11-25 に GitHub から取ってきた）
+- 配り方：`node tools/配る形にまとめる.mjs`（公開するファイルだけを `_cloudflare/pineapp13/` に写す）→ claude フォルダで `npx wrangler pages deploy "2_アプリ/8_めとあたまのたいそう/_cloudflare/pineapp13" --project-name pineapp13 --branch main --commit-dirty=true`
+- ⚠️`pineapp.jp` の下なので、Cloudflare Web Analytics が自動で入る（`privacy.html` に書いた）。広告は入れていない
+- ⚠️Cloudflare Pages は `/index.html` を `/` へ、`/privacy.html` を `/privacy` へ移す（308）。だから `manifest.webmanifest` の `start_url` は `./`、`sw.js` は `./index.html` を保存しない（保存した転送をアプリを開くときに返すと、ブラウザがエラーにする）。`sw.js` を変えたら `CACHE` の番号を上げる
+- ⚠️住所が変わったので、前の住所（github.io）で使っていた人の記録（localStorage）は引き継がれない（住所ごとに別の保存場所のため）
+
 ## ファイル
 
 - `index.html` … アプリ本体
